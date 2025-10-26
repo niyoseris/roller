@@ -259,24 +259,17 @@ class VideoCreator:
                 video = video.with_audio(lowered_audio)
                 logger.info(f"Video audio volume set to {video_volume}")
             
-            # Create high-quality narration with Edge TTS
+            # Create narration with gTTS (simple and reliable)
             narration_path = self.temp_dir / "narration.mp3"
             
-            # Map language codes to Edge TTS voices
-            voice_map = {
-                'en': 'en-US-AriaNeural',  # Female, clear
-                'tr': 'tr-TR-AhmetNeural',  # Male, Turkish
-            }
-            voice = voice_map.get(narration_lang, 'en-US-AriaNeural')
-            
-            # Use asyncio to call Edge TTS
+            # Use gTTS for narration (works in sync context)
             try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                success = loop.run_until_complete(self.create_narration_edge(text, narration_path, voice))
-                loop.close()
+                tts = gTTS(text=text, lang=narration_lang, slow=False)
+                tts.save(str(narration_path))
+                success = True
+                logger.info(f"Narration created with gTTS ({narration_lang})")
             except Exception as e:
-                logger.error(f"Edge TTS error: {e}")
+                logger.error(f"gTTS error: {e}")
                 success = False
             
             if not success:
@@ -292,7 +285,7 @@ class VideoCreator:
                 if video_duration < target_duration:
                     loop_count = int(target_duration / video_duration) + 1
                     logger.info(f"Looping video {loop_count} times to match narration duration")
-                    from moviepy import concatenate_videoclips
+                    from moviepy.editor import concatenate_videoclips
                     video = concatenate_videoclips([video] * loop_count)
                     video = video.with_duration(target_duration)
                     logger.info(f"Video looped to {target_duration}s")

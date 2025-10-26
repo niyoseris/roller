@@ -8,8 +8,12 @@ import json
 import time
 import logging
 from datetime import datetime
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Optional
 import aiohttp
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 from real_trend_collectors import (
     TwitterTrendsCollector,
     RedditTrendingCollector,
@@ -19,6 +23,9 @@ from wikipedia_finder import WikipediaFinder
 from url_tracker import URLTracker
 from web_monitor import WebMonitor
 from ollama_analyzer import OllamaAnalyzer
+from together_ai_analyzer import TogetherAIAnalyzer
+from twitter_poster import TwitterPoster
+from video_creator import VideoCreator
 
 # Configure logging
 logging.basicConfig(
@@ -34,7 +41,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 ROLL_WIKI_API = "https://roll.wiki/api/v1/summarize"
 SECRET = "laylaylom"
-REQUEST_DELAY = 30  # seconds between requests
+REQUEST_DELAY = 1800  # 30 minutes (1800 seconds) between requests
 CYCLE_INTERVAL = 3600  # 60 minutes in seconds
 
 CATEGORIES = [
@@ -49,7 +56,7 @@ CATEGORIES = [
 class TrendAgent:
     """Main agent that orchestrates trend collection and submission"""
     
-    def __init__(self, enable_web_monitor=True, ollama_model=None):
+    def __init__(self, enable_web_monitor=True, ollama_model=None, enable_twitter=True, enable_video=False, use_together_ai=True):
         self.collectors = [
             GetDayTrendsCollector(),           # GetDayTrends - Twitter hashtags (PRIMARY)
             TwitterTrendsCollector(),          # Trends24 - Twitter trends (BACKUP)
@@ -58,10 +65,20 @@ class TrendAgent:
         self.wikipedia_finder = WikipediaFinder()
         self.url_tracker = URLTracker()
         self.web_monitor = WebMonitor(self) if enable_web_monitor else None
-        self.llm_analyzer = OllamaAnalyzer(model_name=ollama_model)
+        # Use Together AI by default, fallback to Ollama
+        if use_together_ai:
+            self.llm_analyzer = TogetherAIAnalyzer()
+            logger.info("Using Together AI for analysis and tweet generation")
+        else:
+            self.llm_analyzer = OllamaAnalyzer(model_name=ollama_model)
+            logger.info("Using Ollama for analysis")
+        self.twitter_poster = TwitterPoster() if enable_twitter else None
+        self.video_creator = VideoCreator() if enable_video else None
         self.stats = {
             'cycles_completed': 0,
-            'articles_submitted': 0
+            'articles_submitted': 0,
+            'tweets_posted': 0,
+            'videos_created': 0
         }
         
     async def collect_trends(self) -> List[str]:
@@ -162,8 +179,12 @@ class TrendAgent:
             return max(scores, key=scores.get)
         return "Culture"
     
-    async def submit_to_rollwiki(self, wikipedia_url: str, category: str) -> bool:
-        """Submit a Wikipedia article to roll.wiki"""
+    async def submit_to_rollwiki(self, wikipedia_url: str, category: str) -> tuple[bool, Optional[int]]:
+        """Submit a Wikipedia article to roll.wiki
+        
+        Returns:
+            tuple: (success: bool, article_id: Optional[int])
+        """
         params = {
             "url": wikipedia_url,
             "save": "true",
@@ -173,30 +194,63 @@ class TrendAgent:
         
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(ROLL_WIKI_API, params=params, timeout=30) as response:
+                # Increased timeout to 120s for roll.wiki processing
+                async with session.get(ROLL_WIKI_API, params=params, timeout=120) as response:
                     response_text = await response.text()
                     status = response.status
                     
                     if status == 200:
                         logger.info(f"✅ Successfully submitted: {wikipedia_url} (Category: {category})")
                         logger.info(f"   Response: {response_text[:100]}")
-                        return True
+                        
+                        # Extract article_id from response
+                        try:
+                            response_data = json.loads(response_text)
+                            logger.info(f"   Parsed response data: {response_data}")
+                            # Try different possible response formats
+                            article_id = (
+                                response_data.get('data', {}).get('article_id') or
+                                response_data.get('article_id') or
+                                response_data.get('id')
+                            )
+                            logger.info(f"   Extracted article_id: {article_id}")
+                            return (True, article_id)
+                        except Exception as e:
+                            logger.warning(f"   Failed to parse article_id: {e}")
+                            return (True, None)
                     elif status == 409:
                         # Article already exists in roll.wiki
                         logger.info(f"ℹ️  Article already exists in roll.wiki: {wikipedia_url}")
-                        return True  # Consider as success (already processed)
+                        # Extract article_id from error message: "Article already exists in database with ID 1630"
+                        try:
+                            response_data = json.loads(response_text)
+                            error_message = response_data.get('error', '')
+                            
+                            # Parse article_id from error message
+                            import re
+                            match = re.search(r'with ID (\d+)', error_message)
+                            if match:
+                                article_id = int(match.group(1))
+                                logger.info(f"   Extracted article_id from error: {article_id}")
+                                return (True, article_id)
+                            else:
+                                logger.warning(f"   Could not extract article_id from: {error_message}")
+                                return (True, None)
+                        except Exception as e:
+                            logger.warning(f"   Failed to parse article_id: {e}")
+                            return (True, None)
                     elif status == 404:
                         # Wikipedia article not found
                         logger.warning(f"⚠️  Wikipedia article not found: {wikipedia_url}")
                         logger.warning(f"   Response: {response_text[:200]}")
-                        return False
+                        return (False, None)
                     else:
                         logger.warning(f"❌ Failed to submit {wikipedia_url}: Status {status}")
                         logger.warning(f"   Response: {response_text[:200]}")
-                        return False
+                        return (False, None)
         except Exception as e:
             logger.error(f"Error submitting {wikipedia_url}: {e}")
-            return False
+            return (False, None)
     
     async def process_trend(self, trend: str) -> bool:
         """
@@ -233,8 +287,55 @@ class TrendAgent:
         
         logger.info(f"  ✅ Summary fetched ({len(summary)} chars): {summary[:80]}...")
         
+        # Check if this page should be skipped (no meaningful content)
+        summary_lower = summary.lower()
+        
+        # 1. Disambiguation pages (anlam ayrımı)
+        disambiguation_indicators = [
+            "may refer to:",
+            "may refer to",
+            "may mean:",
+            "may stand for:",
+            "can refer to:",
+            "most commonly refers to:",
+            "commonly refers to:",
+            "disambiguation",
+            "is a disambiguation"
+        ]
+        
+        if any(indicator in summary_lower for indicator in disambiguation_indicators):
+            logger.warning(f"  ⚠️  Skipping disambiguation page (anlam ayrımı sayfası)")
+            return False
+        
+        # 2. Surname/Name pages (soyadı/isim sayfaları)
+        import re
+        
+        # Check if it's a surname/name page using regex patterns
+        name_patterns = [
+            r'\bis\s+(?:a|an)\s+(?:\w+\s+)*surname\b',  # "is a surname", "is an occupational surname"
+            r'\bis\s+(?:a|an)\s+(?:\w+\s+)*(?:male|female|masculine|feminine|given|personal)?\s*name\b',  # "is a name", "is a male name", etc.
+            r'\bsurname\s+originating\b',  # "surname originating"
+            r'\bfamily\s+name\b',  # "family name"
+            r'\bgiven\s+name\b',  # "given name"
+        ]
+        
+        for pattern in name_patterns:
+            if re.search(pattern, summary_lower):
+                logger.warning(f"  ⚠️  Skipping name/surname page (isim/soyadı sayfası)")
+                return False
+        
+        # 3. List pages (liste sayfaları)
+        if summary_lower.startswith("this is a list of") or summary_lower.startswith("list of"):
+            logger.warning(f"  ⚠️  Skipping list page (liste sayfası)")
+            return False
+        
+        # 4. Very short content (çok kısa içerik)
+        if len(summary) < 100:
+            logger.warning(f"  ⚠️  Skipping page with insufficient content (yetersiz içerik: {len(summary)} chars)")
+            return False
+        
         # Step 3: Summary → LLM → Category
-        logger.info(f"  🤖 Step 3: Categorizing with Ollama using Wikipedia summary...")
+        logger.info(f"  🤖 Step 3: Categorizing with AI using Wikipedia summary...")
         category = await self.categorize_trend(trend, summary)
         logger.info(f"  ✅ Category determined: {category}")
         
@@ -242,11 +343,57 @@ class TrendAgent:
         logger.info(f"  🚀 Step 4: Submitting to roll.wiki...")
         logger.info(f"     URL: {wikipedia_url}")
         logger.info(f"     Category: {category}")
-        success = await self.submit_to_rollwiki(wikipedia_url, category)
+        success, article_id = await self.submit_to_rollwiki(wikipedia_url, category)
         
         if success:
             self.url_tracker.mark_processed(wikipedia_url)
             logger.info(f"  ✅ Successfully submitted to roll.wiki!")
+            
+            # Post to Twitter if enabled
+            if self.twitter_poster and self.twitter_poster.is_enabled():
+                logger.info(f"  🐦 Step 5: Posting to Twitter...")
+                
+                # Generate tweet using Together AI if available
+                tweet_text = None
+                if isinstance(self.llm_analyzer, TogetherAIAnalyzer):
+                    roll_wiki_url = f"https://roll.wiki/summary/{article_id}"
+                    logger.info(f"  🤖 Generating optimized tweet with Together AI...")
+                    tweet_text = await self.llm_analyzer.generate_tweet(trend, category, summary, roll_wiki_url)
+                    if tweet_text:
+                        logger.info(f"  ✨ AI-generated tweet: {tweet_text[:100]}...")
+                
+                tweet_success = await self.twitter_poster.post_tweet_async(trend, category, article_id, tweet_text)
+                if tweet_success:
+                    self.stats['tweets_posted'] += 1
+                    logger.info(f"  ✅ Tweet posted successfully!")
+                else:
+                    logger.warning(f"  ⚠️ Failed to post tweet (article still submitted to roll.wiki)")
+            
+            # Create video if enabled
+            if self.video_creator:
+                logger.info(f"  🎬 Step 6: Creating video...")
+                try:
+                    # Create video with Wikipedia summary
+                    video_filename = f"{trend.replace(' ', '_').replace('/', '_')}_shorts.mp4"
+                    video_path = self.video_creator.create_video_from_pexels(
+                        search_query=trend,
+                        text=summary[:500],  # Limit text length
+                        output_filename=video_filename,
+                        narration_lang='en',  # Use 'tr' for Turkish
+                        scroll_speed=80,
+                        font_size=45,
+                        orientation='portrait',
+                        video_volume=0.1
+                    )
+                    
+                    if video_path:
+                        self.stats['videos_created'] += 1
+                        logger.info(f"  ✅ Video created: {video_path}")
+                    else:
+                        logger.warning(f"  ⚠️ Failed to create video")
+                except Exception as e:
+                    logger.error(f"  ❌ Video creation error: {e}")
+            
             return True
         else:
             logger.warning(f"  ❌ Failed to submit to roll.wiki")
@@ -281,11 +428,14 @@ class TrendAgent:
                     processed_count += 1
                     self.stats['articles_submitted'] += 1
                 
-                # Wait between requests (except for the last one)
-                if i < len(trends):
-                    logger.info(f"⏳ Waiting {REQUEST_DELAY} seconds before next trend...")
+                # Only wait if successful AND not the last trend
+                if success and i < len(trends):
+                    logger.info(f"⏳ Waiting {REQUEST_DELAY} seconds ({REQUEST_DELAY//60} minutes) before next trend...")
                     logger.info("")
                     await asyncio.sleep(REQUEST_DELAY)
+                elif not success:
+                    logger.info(f"⏭️  Skipping delay, moving to next trend immediately...")
+                    logger.info("")
                     
             except Exception as e:
                 logger.error(f"❌ Error processing trend '{trend}': {e}")
@@ -305,12 +455,14 @@ class TrendAgent:
         logger.info(f"✅ Cycle completed!")
         logger.info(f"📊 Results: {processed_count} articles submitted out of {len(trends)} trends")
         logger.info(f"📈 Total articles submitted: {self.stats['articles_submitted']}")
+        if self.twitter_poster and self.twitter_poster.is_enabled():
+            logger.info(f"🐦 Total tweets posted: {self.stats['tweets_posted']}")
         logger.info("=" * 60)
     
     async def run(self):
         """Main run loop - execute cycles every 60 minutes"""
         logger.info("Trend Agent started!")
-        logger.info(f"Configuration: {REQUEST_DELAY}s delay between requests, {CYCLE_INTERVAL}s between cycles")
+        logger.info(f"Configuration: {REQUEST_DELAY//60} minutes delay between requests, {CYCLE_INTERVAL//60} minutes between cycles")
         
         # Start web monitor
         if self.web_monitor:
@@ -330,7 +482,9 @@ class TrendAgent:
 
 async def main():
     """Entry point"""
-    agent = TrendAgent()
+    # enable_video=True to create videos for each trend
+    # Note: Requires Pexels API key in .env file
+    agent = TrendAgent(enable_video=True)  # Set to True to enable video creation
     await agent.run()
 
 
