@@ -235,7 +235,7 @@ class VideoCreator:
             text: Text to display and narrate
             output_path: Output video file path
             narration_lang: Language for narration ('en', 'tr', etc.)
-            scroll_speed: Text scrolling speed
+            scroll_speed: Text scrolling speed (pixels per second)
             font_size: Text font size
             video_volume: Original video volume (0.0-1.0, default 0.1 for low)
         """
@@ -246,8 +246,24 @@ class VideoCreator:
             video = VideoFileClip(str(video_path))
             video_duration = video.duration
             video_size = video.size
+            video_height = video_size[1]
             
             logger.info(f"Video loaded: {video_duration}s, {video_size}")
+            
+            # Calculate text scroll duration
+            # Text needs to scroll from bottom to completely off screen at top
+            lines = text.split('\n')
+            line_height = font_size + 15
+            text_box_height = len(lines) * line_height
+            start_y = video_height - 200  # Start position (200px from bottom)
+            
+            # Total distance to scroll = start_y + text_box_height
+            # Time = distance / speed
+            scroll_distance = start_y + text_box_height
+            scroll_duration = scroll_distance / scroll_speed
+            
+            logger.info(f"Text scroll: {len(lines)} lines, {text_box_height}px height")
+            logger.info(f"Scroll duration: {scroll_duration:.1f}s (distance: {scroll_distance}px at {scroll_speed}px/s)")
             
             # Lower video audio volume  
             if video.audio:
@@ -272,32 +288,43 @@ class VideoCreator:
                 logger.error(f"gTTS error: {e}")
                 success = False
             
-            if not success:
+            if success:
+                narration_audio = AudioFileClip(str(narration_path))
+                logger.info(f"Narration duration: {narration_audio.duration:.1f}s")
+            else:
                 logger.warning("Narration creation failed, continuing without it")
                 narration_audio = None
-                target_duration = video_duration
-            else:
-                narration_audio = AudioFileClip(str(narration_path))
-                target_duration = narration_audio.duration
-                logger.info(f"Narration duration: {target_duration}s")
-                
-                # Loop video if shorter than narration
-                if video_duration < target_duration:
-                    loop_count = int(target_duration / video_duration) + 1
-                    logger.info(f"Looping video {loop_count} times to match narration duration")
-                    from moviepy.editor import concatenate_videoclips
-                    video = concatenate_videoclips([video] * loop_count)
-                    video = video.with_duration(target_duration)
-                    logger.info(f"Video looped to {target_duration}s")
+            
+            # Use scroll duration as target duration (text must scroll completely off)
+            target_duration = scroll_duration
+            logger.info(f"Target video duration: {target_duration:.1f}s (scroll duration)")
+            
+            # Loop video if shorter than scroll duration
+            if video_duration < target_duration:
+                loop_count = int(target_duration / video_duration) + 1
+                logger.info(f"Looping video {loop_count} times to match scroll duration")
+                from moviepy.editor import concatenate_videoclips
+                video = concatenate_videoclips([video] * loop_count)
+                video = video.with_duration(target_duration)
+                logger.info(f"Video looped to {target_duration:.1f}s")
             
             # Use video as base (text will be added with FFmpeg later)
             final_video = video
             
-            # Add narration audio if available
+            # Add narration audio if available (loop it if shorter than video)
             if narration_audio:
+                narration_duration = narration_audio.duration
+                if narration_duration < target_duration:
+                    # Loop narration to match video duration
+                    from moviepy.editor import concatenate_audioclips
+                    loop_count = int(target_duration / narration_duration) + 1
+                    narration_audio = concatenate_audioclips([narration_audio] * loop_count)
+                    narration_audio = narration_audio.with_duration(target_duration)
+                    logger.info(f"Narration looped to match video duration")
+                
                 # Mix with original audio if exists
                 if video.audio:
-                    from moviepy import CompositeAudioClip
+                    from moviepy.editor import CompositeAudioClip
                     final_audio = CompositeAudioClip([video.audio, narration_audio])
                     final_video = final_video.with_audio(final_audio)
                 else:
