@@ -27,6 +27,10 @@ wheels/
 processed_urls.json
 *.log
 
+# Environment variables (API keys)
+.env
+.env.local
+
 # IDE
 .vscode/
 .idea/
@@ -37,3 +41,12 @@ processed_urls.json
 # OS
 .DS_Store
 Thumbs.db
+
+# VPS Deployment (private)
+deploy_to_vps.sh
+QUICK_DEPLOY.md
+VPS_DEPLOYMENT_GUIDE.md
+
+# Video files
+temp_videos/
+output_videos/
