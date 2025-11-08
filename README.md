@@ -1,10 +1,12 @@
-# 🤖 Agentic Trend Video Creator
+# 🤖 Roller - AI Video Creator
 
 **Autonomous AI agent that transforms Wikipedia articles into engaging YouTube Shorts videos automatically.**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Google Gemini](https://img.shields.io/badge/AI-Gemini%202.5-orange.svg)](https://ai.google.dev/)
+
+**English** | [Türkçe](README_TR.md)
 
 ## ✨ Features
 
