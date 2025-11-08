@@ -57,7 +57,7 @@
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/agentic.git
+git clone https://github.com/niyoseris/roller.git
 cd agentic
 ```
 
@@ -285,8 +285,8 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ## 📮 Contact & Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/agentic/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/agentic/discussions)
+- **Issues**: [GitHub Issues](https://github.com/niyoseris/roller/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/niyoseris/roller/discussions)
 
 ---
 

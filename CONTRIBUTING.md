@@ -6,7 +6,7 @@ Thank you for your interest in contributing! 🎉
 
 ### Reporting Bugs
 
-1. Check if the bug has already been reported in [Issues](https://github.com/yourusername/agentic/issues)
+1. Check if the bug has already been reported in [Issues](https://github.com/niyoseris/roller/issues)
 2. If not, create a new issue with:
    - Clear description of the bug
    - Steps to reproduce
@@ -24,7 +24,7 @@ Thank you for your interest in contributing! 🎉
 
 1. **Fork the repository**
 ```bash
-git clone https://github.com/yourusername/agentic.git
+git clone https://github.com/niyoseris/roller.git
 cd agentic
 ```
 

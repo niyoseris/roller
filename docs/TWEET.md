@@ -12,7 +12,7 @@
 • Real-time dashboard
 • Open source!
 
-🔗 https://github.com/yourusername/agentic
+🔗 https://github.com/niyoseris/roller
 
 #AI #Automation #YouTube #OpenSource #Python
 ```
@@ -31,7 +31,7 @@ I built an AI agent that:
 
 All on autopilot. Open source.
 
-🔗 https://github.com/yourusername/agentic
+🔗 https://github.com/niyoseris/roller
 
 #Automation #ContentCreation #AI
 ```
@@ -49,7 +49,7 @@ Built an autonomous agent that:
 
 Perfect for content creators & educators!
 
-GitHub: https://github.com/yourusername/agentic
+GitHub: https://github.com/niyoseris/roller
 
 #YouTubeShorts #AI #Automation
 ```
@@ -68,7 +68,7 @@ GitHub: https://github.com/yourusername/agentic
 Creates & uploads Shorts automatically from Wikipedia articles.
 
 Open source ⭐️
-https://github.com/yourusername/agentic
+https://github.com/niyoseris/roller
 
 #Python #AI #VideoAutomation
 ```
@@ -83,7 +83,7 @@ Fully automated with Gemini AI
 
 Dashboard, TTS, auto-upload, 27 categories.
 
-⭐️ https://github.com/yourusername/agentic
+⭐️ https://github.com/niyoseris/roller
 
 #AI #Automation #OpenSource
 ```
