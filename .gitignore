@@ -25,7 +25,17 @@ wheels/
 
 # Data files
 processed_urls.json
+scan_session.json
+scan_reports.json
 *.log
+
+# Environment variables (API keys)
+.env
+.env.local
+
+# YouTube API credentials
+youtube_credentials.json
+youtube_token.pickle
 
 # IDE
 .vscode/
@@ -37,3 +47,16 @@ processed_urls.json
 # OS
 .DS_Store
 Thumbs.db
+
+# VPS Deployment (private)
+deploy_to_vps.sh
+QUICK_DEPLOY.md
+VPS_DEPLOYMENT_GUIDE.md
+
+# Video files
+temp_videos/
+output_videos/
+
+# Screenshots & test files
+screenshots/
+*.wav

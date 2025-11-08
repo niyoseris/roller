@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Trend Collector - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .feature-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+        
+        .feature-toggle:hover {
+            background: #e8e8e8;
+        }
+        
+        .feature-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .feature-description {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 30px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .settings-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .settings-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea.settings-input {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background-color: #4caf50;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-inactive {
+            background-color: #f44336;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .last-update {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background-color: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .trend-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .trend-item {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .trend-pending {
+            background-color: #f5f5f5;
+        }
+        
+        .trend-processing {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .trend-success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        
+        .trend-failed {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        
+        .report-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .report-header {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .report-content {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Agentic Trend Collector</h1>
+            <p>Özellik Kontrol Paneli & İzleme Dashboard'u</p>
+        </div>
+        
+        <div id="alerts"></div>
+        
+        <div class="dashboard-grid">
+            <!-- Statistics Card -->
+            <div class="card">
+                <h2>📊 İstatistikler</h2>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-cycles">0</div>
+                        <div class="stat-label">Döngü</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-articles">0</div>
+                        <div class="stat-label">Makale</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-tweets">0</div>
+                        <div class="stat-label">Tweet</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-videos">0</div>
+                        <div class="stat-label">Video</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-youtube">0</div>
+                        <div class="stat-label">YouTube</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Card -->
+            <div class="card">
+                <h2>⚙️ Ayarlar</h2>
+                
+                <label>İstek Arası Gecikme (saniye):</label>
+                <input type="number" class="settings-input" id="request_delay" value="1800">
+                
+                <label>Döngü Aralığı (saniye):</label>
+                <input type="number" class="settings-input" id="cycle_interval" value="3600">
+                
+                <label>YouTube Kategorisi:</label>
+                <select class="settings-input" id="youtube_category">
+                    <option value="22">İnsanlar & Bloglar</option>
+                    <option value="24">Eğlence</option>
+                    <option value="25">Haberler & Politika</option>
+                    <option value="26">Nasıl Yapılır & Stil</option>
+                    <option value="27">Eğitim</option>
+                    <option value="28">Bilim & Teknoloji</option>
+                </select>
+                
+                <label>Video Dili:</label>
+                <select class="settings-input" id="video_language">
+                    <option value="en">İngilizce</option>
+                    <option value="tr">Türkçe</option>
+                </select>
+                
+                <button class="btn" onclick="saveSettings()">💾 Ayarları Kaydet</button>
+            </div>
+            
+            <!-- Manual Scan Control Card -->
+            <div class="card" style="grid-column: span 2;">
+                <h2>🚀 Hızlı Trend Ekleme</h2>
+                
+                <p style="color: #666; margin-bottom: 15px;">
+                    ✨ Tek tıklama ile trend ekle ve işlemeye başla! Gemini otomatik olarak Wikipedia URL ve kategori bulur.
+                </p>
+                
+                <label>Trend Ekle (Her satıra bir trend):</label>
+                <textarea class="settings-input" id="manual_trends" rows="5" placeholder="NBA&#10;Taylor Swift&#10;Climate Change"></textarea>
+                
+                <div class="btn-group">
+                    <button class="btn btn-success" onclick="addAndStart()" style="font-size: 1.1rem; padding: 12px 24px;">
+                        🚀 Ekle ve Başlat
+                    </button>
+                    <button class="btn btn-secondary" onclick="pauseScan()">⏸️ Duraklat</button>
+                    <button class="btn btn-danger" onclick="resetScan()">🔄 Sıfırla</button>
+                </div>
+                
+                <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem;">
+                    <strong>💡 İpucu:</strong> Trendleri ekledikten sonra Gemini arka planda URL ve kategori bulur (~10-15 saniye). 
+                    İşlem otomatik başlar!
+                </div>
+                
+                <!-- Progress Bar -->
+                <div style="margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span><strong>İlerleme:</strong></span>
+                        <span id="progress-text">0 / 0 trend</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%;">0%</div>
+                    </div>
+                    <div style="text-align: center; color: #666; margin-top: 10px;">
+                        <span id="session-status">Durum: Beklemede</span>
+                    </div>
+                </div>
+                
+                <!-- Trend List Display -->
+                <div style="margin-top: 20px;">
+                    <h3 style="font-size: 1.2rem; margin-bottom: 10px;">Trend Listesi:</h3>
+                    <div class="trend-list" id="trend-list-display">
+                        <div style="text-align: center; color: #999; padding: 20px;">
+                            Henüz trend eklenmedi
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports Card -->
+            <div class="card" style="grid-column: span 2;">
+                <h2>📋 Tarama Raporları & Video Yönetimi</h2>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span><strong>Toplam Rapor:</strong> <span id="reports-count">0</span></span>
+                    <button class="btn btn-danger" onclick="clearReports()" style="padding: 8px 16px; font-size: 0.9rem;">🗑️ Tümünü Sil</button>
+                </div>
+                
+                <div id="reports-container" style="max-height: 400px; overflow-y: auto;">
+                    <div style="text-align: center; color: #999; padding: 20px;">
+                        Henüz rapor bulunmuyor
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Videos Card -->
+            <div class="card" style="grid-column: span 2;">
+                <h2>🎥 Oluşturulan Videolar</h2>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span><strong>Toplam Video:</strong> <span id="videos-count">0</span></span>
+                    <button class="btn btn-primary" onclick="loadVideos()" style="padding: 8px 16px; font-size: 0.9rem;">🔄 Yenile</button>
+                </div>
+                
+                <div id="videos-container" style="max-height: 400px; overflow-y: auto;">
+                    <div style="text-align: center; color: #999; padding: 20px;">
+                        Henüz video bulunmuyor
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <div class="last-update" id="last-update">
+            Son güncelleme bekleniyor...
+        </div>
+    </div>
+    
+    <script>
+        // Load initial configuration
+        function loadConfig() {
+            fetch('/api/config')
+                .then(response => response.json())
+                .then(config => {
+                    // Update feature toggles
+                    for (const [feature, enabled] of Object.entries(config.features)) {
+                        const checkbox = document.getElementById(feature);
+                        if (checkbox) {
+                            checkbox.checked = enabled;
+                            updateStatusIndicator(feature, enabled);
+                        }
+                    }
+                    
+                    // Update settings
+                    document.getElementById('request_delay').value = config.settings.request_delay;
+                    document.getElementById('cycle_interval').value = config.settings.cycle_interval;
+                    document.getElementById('youtube_category').value = config.settings.youtube_category;
+                    document.getElementById('video_language').value = config.settings.video_language;
+                    
+                    // Update stats
+                    updateStats(config.stats);
+                });
+        }
+        
+        
+        function saveSettings() {
+            const settings = {
+                request_delay: parseInt(document.getElementById('request_delay').value),
+                cycle_interval: parseInt(document.getElementById('cycle_interval').value),
+                youtube_category: document.getElementById('youtube_category').value,
+                video_language: document.getElementById('video_language').value
+            };
+            
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Ayarlar başarıyla kaydedildi!', 'success');
+                } else {
+                    showAlert('Hata: ' + data.message, 'warning');
+                }
+            });
+        }
+        
+        function updateStats(stats) {
+            document.getElementById('stat-cycles').textContent = stats.cycles_completed || 0;
+            document.getElementById('stat-articles').textContent = stats.articles_submitted || 0;
+            document.getElementById('stat-tweets').textContent = stats.tweets_posted || 0;
+            document.getElementById('stat-videos').textContent = stats.videos_created || 0;
+            document.getElementById('stat-youtube').textContent = stats.youtube_uploads || 0;
+            
+            if (stats.last_update) {
+                const date = new Date(stats.last_update);
+                document.getElementById('last-update').textContent = 
+                    `Son güncelleme: ${date.toLocaleString('tr-TR')}`;
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            const alertsContainer = document.getElementById('alerts');
+            alertsContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+        
+        // Auto-refresh stats every 10 seconds
+        setInterval(() => {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(stats => updateStats(stats));
+        }, 10000);
+        
+        // Load initial config on page load
+        loadConfig();
+        
+        // ============= Scan Control Functions =============
+        
+        // Quick add and start - combines setTrendList and startScan
+        function addAndStart() {
+            const trends = document.getElementById('manual_trends').value;
+            
+            if (!trends.trim()) {
+                showAlert('⚠️ Lütfen en az bir trend ekleyin!', 'warning');
+                return;
+            }
+            
+            showAlert('🚀 Trendler ekleniyor ve Gemini çalıştırılıyor...', 'info');
+            
+            // Reset session first, then add trends with Gemini
+            fetch('/api/session/reset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Now add trends with Gemini enabled
+                return fetch('/api/session/trends', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        trends: trends,
+                        use_gemini: true  // Always use Gemini
+                    })
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('✅ ' + data.message + ' - Gemini URL ve kategori buluyor...', 'success');
+                    document.getElementById('manual_trends').value = '';
+                    loadSessionStatus();
+                    
+                    // Wait 15 seconds for Gemini, then auto-start
+                    setTimeout(() => {
+                        fetch('/api/session/start', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showAlert('🎯 İşlem başlatıldı! Trendler işleniyor...', 'success');
+                                loadSessionStatus();
+                            }
+                        });
+                    }, 15000);  // 15 seconds for Gemini to finish
+                } else {
+                    showAlert('❌ Hata: ' + data.message, 'warning');
+                }
+            })
+            .catch(error => {
+                showAlert('❌ Bir hata oluştu: ' + error.message, 'warning');
+            });
+        }
+        
+        function setTrendList() {
+            const trends = document.getElementById('manual_trends').value;
+            
+            if (!trends.trim()) {
+                showAlert('Trend listesi boş!', 'warning');
+                return;
+            }
+            
+            fetch('/api/session/trends', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ trends: trends })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    document.getElementById('manual_trends').value = '';
+                    loadSessionStatus();
+                } else {
+                    showAlert('Hata: ' + data.message, 'warning');
+                }
+            })
+            .catch(error => {
+                showAlert('Bir hata oluştu: ' + error.message, 'warning');
+            });
+        }
+        
+        function addToTrendList() {
+            const trends = document.getElementById('manual_trends').value;
+            
+            if (!trends.trim()) {
+                showAlert('Trend listesi boş!', 'warning');
+                return;
+            }
+            
+            fetch('/api/session/trends/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ trends: trends })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    document.getElementById('manual_trends').value = '';
+                    loadSessionStatus();
+                } else {
+                    showAlert('Hata: ' + data.message, 'warning');
+                }
+            })
+            .catch(error => {
+                showAlert('Bir hata oluştu: ' + error.message, 'warning');
+            });
+        }
+        
+        function startScan() {
+            fetch('/api/session/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    loadSessionStatus();
+                } else {
+                    showAlert('Hata: ' + data.message, 'warning');
+                }
+            })
+            .catch(error => {
+                showAlert('Bir hata oluştu: ' + error.message, 'warning');
+            });
+        }
+        
+        function pauseScan() {
+            fetch('/api/session/pause', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    loadSessionStatus();
+                } else {
+                    showAlert('Hata: ' + data.message, 'warning');
+                }
+            })
+            .catch(error => {
+                showAlert('Bir hata oluştu: ' + error.message, 'warning');
+            });
+        }
+        
+        function resetScan() {
+            if (!confirm('Oturumu sıfırlamak istediğinizden emin misiniz? Tüm trend listesi ve ilerleme silinecek.')) {
+                return;
+            }
+            
+            fetch('/api/session/reset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    loadSessionStatus();
+                } else {
+                    showAlert('Hata: ' + data.message, 'warning');
+                }
+            })
+            .catch(error => {
+                showAlert('Bir hata oluştu: ' + error.message, 'warning');
+            });
+        }
+        
+        function loadSessionStatus() {
+            fetch('/api/session/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const status = data.status;
+                        const trends = data.trends;
+                        const processed = data.processed;
+                        const failed = data.failed;
+                        
+                        // Update progress
+                        const progress = status.progress_percentage;
+                        document.getElementById('progress-fill').style.width = progress + '%';
+                        document.getElementById('progress-fill').textContent = Math.round(progress) + '%';
+                        document.getElementById('progress-text').textContent = 
+                            `${status.current_index} / ${status.total_trends} trend`;
+                        
+                        // Update status
+                        const statusText = {
+                            'idle': 'Beklemede',
+                            'running': 'Çalışıyor ⚡',
+                            'paused': 'Duraklatıldı ⏸️',
+                            'completed': 'Tamamlandı ✅'
+                        };
+                        document.getElementById('session-status').textContent = 
+                            'Durum: ' + (statusText[status.status] || status.status);
+                        
+                        // Update trend list display
+                        updateTrendListDisplay(trends, processed, failed, status.current_index);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading session status:', error);
+                });
+        }
+        
+        function updateTrendListDisplay(trends, processed, failed, currentIndex) {
+            const container = document.getElementById('trend-list-display');
+            
+            if (!trends || trends.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Henüz trend eklenmedi</div>';
+                return;
+            }
+            
+            // Get trend data directly from the already loaded data
+            fetch('/api/session/status')
+                .then(response => response.json())
+                .then(data => {
+                    const trendData = data.trend_data || {};
+                    const latestTrends = data.trends || trends;
+                    const latestProcessed = data.processed || processed;
+                    const latestFailed = data.failed || failed;
+                    const latestCurrentIndex = data.status ? data.status.current_index : currentIndex;
+                    
+                    let html = '';
+                    latestTrends.forEach((trend, index) => {
+                        let itemClass = 'trend-pending';
+                        let statusIcon = '⏳';
+                        
+                        if (latestProcessed.includes(trend)) {
+                            itemClass = 'trend-success';
+                            statusIcon = '✅';
+                        } else if (latestFailed.includes(trend)) {
+                            itemClass = 'trend-failed';
+                            statusIcon = '❌';
+                        } else if (index === latestCurrentIndex) {
+                            itemClass = 'trend-processing';
+                            statusIcon = '🔄';
+                        }
+                        
+                        // Add Wikipedia URL and category if available
+                        const info = trendData[trend];
+                        let infoDisplay = '';
+                        
+                        if (info) {
+                            if (typeof info === 'object') {
+                                const url = info.url || '';
+                                const category = info.category || '';
+                                infoDisplay = `<br><a href="${url}" target="_blank" style="font-size: 0.8rem; color: #667eea;">📖 Wikipedia</a>`;
+                                if (category) {
+                                    infoDisplay += `<br><span style="font-size: 0.75rem; color: #888;">🏷️ ${category}</span>`;
+                                }
+                            } else {
+                                // Backward compatibility
+                                infoDisplay = `<br><a href="${info}" target="_blank" style="font-size: 0.8rem; color: #667eea;">📖 Wikipedia</a>`;
+                            }
+                        }
+                        
+                        html += `
+                            <div class="trend-item ${itemClass}">
+                                <span>${statusIcon} ${trend}${infoDisplay}</span>
+                                <span style="font-size: 0.85rem; color: #666;">#${index + 1}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    container.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading trend data:', error);
+                    container.innerHTML = '<div style="text-align: center; color: #f44336; padding: 20px;">❌ Trend listesi yüklenemedi</div>';
+                });
+        }
+        
+        function loadReports() {
+            fetch('/api/reports')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const reports = data.reports;
+                        const count = data.count;
+                        
+                        document.getElementById('reports-count').textContent = count;
+                        
+                        if (count === 0) {
+                            document.getElementById('reports-container').innerHTML = 
+                                '<div style="text-align: center; color: #999; padding: 20px;">Henüz rapor bulunmuyor</div>';
+                            return;
+                        }
+                        
+                        let html = '';
+                        for (const [trend, report] of Object.entries(reports)) {
+                            const statusBadge = report.success ? 
+                                '<span style="color: #28a745; font-weight: bold;">✅ Başarılı</span>' : 
+                                '<span style="color: #dc3545; font-weight: bold;">❌ Başarısız</span>';
+                            
+                            // Add recreate video button if report was successful AND has article_id
+                            const recreateBtn = (report.success && report.article_id) ? 
+                                `<button onclick="recreateVideo('${trend}')" class="btn btn-primary" style="padding: 5px 10px; font-size: 0.85rem; margin-top: 10px;">🎬 Yeniden Oluştur</button>` : 
+                                (!report.success ? '' : '<div style="color: #999; font-size: 0.85rem; margin-top: 10px;">⚠️ Video oluşturmak için Roll.wiki article ID gerekli</div>');
+                            
+                            html += `
+                                <div class="report-card">
+                                    <div class="report-header">
+                                        ${trend} ${statusBadge}
+                                    </div>
+                                    <div class="report-content">
+                                        ${report.wikipedia_url ? `<div><strong>Wikipedia:</strong> ${report.wikipedia_url}</div>` : ''}
+                                        ${report.category ? `<div><strong>Kategori:</strong> ${report.category}</div>` : ''}
+                                        ${report.article_id ? `<div><strong>Roll.wiki:</strong> <a href="https://roll.wiki/summary/${report.article_id}" target="_blank">https://roll.wiki/summary/${report.article_id}</a></div>` : ''}
+                                        ${report.error ? `<div style="color: #dc3545;"><strong>Hata:</strong> ${report.error}</div>` : ''}
+                                        <div style="margin-top: 5px; font-size: 0.8rem; color: #999;">
+                                            ${new Date(report.processed_at).toLocaleString('tr-TR')}
+                                        </div>
+                                        ${recreateBtn}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        document.getElementById('reports-container').innerHTML = html;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading reports:', error);
+                });
+        }
+        
+        function loadVideos() {
+            fetch('/api/videos')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const videos = data.videos;
+                        const count = data.count;
+                        
+                        document.getElementById('videos-count').textContent = count;
+                        
+                        if (count === 0) {
+                            document.getElementById('videos-container').innerHTML = 
+                                '<div style="text-align: center; color: #999; padding: 20px;">Henüz video bulunmuyor</div>';
+                            return;
+                        }
+                        
+                        let html = '';
+                        videos.forEach(video => {
+                            const sizeInMB = (video.size / (1024 * 1024)).toFixed(2);
+                            const createdDate = new Date(video.created_at * 1000).toLocaleString('tr-TR');
+                            const categoryBadge = video.category ? `<span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🏷️ ${video.category}</span>` : '';
+                            
+                            html += `
+                                <div class="report-card">
+                                    <div class="report-header" style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>🎥 ${video.trend_name}${categoryBadge}</span>
+                                        <span style="font-size: 0.85rem; color: #666;">${sizeInMB} MB</span>
+                                    </div>
+                                    <div class="report-content">
+                                        <div><strong>Dosya:</strong> ${video.filename}</div>
+                                        <div style="margin-top: 5px; font-size: 0.8rem; color: #999;">
+                                            ${createdDate}
+                                        </div>
+                                        <div style="margin-top: 10px; display: flex; gap: 10px;">
+                                            <button onclick="playVideo('${video.relative_path}')" class="btn btn-primary" style="padding: 5px 10px; font-size: 0.85rem;">▶️ İzle</button>
+                                            <button onclick="recreateVideo('${video.trend_name}')" class="btn btn-primary" style="padding: 5px 10px; font-size: 0.85rem; background: #ff9800;">🔄 Yeniden Oluştur</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        document.getElementById('videos-container').innerHTML = html;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading videos:', error);
+                });
+        }
+        
+        function recreateVideo(trend) {
+            if (!confirm(`"${trend}" için video yeniden oluşturulsun mu?\\n\\nBu işlem birkaç dakika sürebilir.`)) {
+                return;
+            }
+            
+            showAlert(`🎬 "${trend}" için video oluşturuluyor...`, 'info');
+            
+            fetch('/api/video/recreate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ trend: trend })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(`✅ ${data.message}`, 'success');
+                    loadVideos(); // Refresh video list
+                } else {
+                    showAlert(`❌ ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('❌ Video oluşturma hatası: ' + error, 'error');
+            });
+        }
+        
+        function playVideo(relativePath) {
+            // Open video in new window (supports category folders)
+            window.open(`/api/video/${relativePath}`, '_blank');
+        }
+        
+        function clearReports() {
+            if (!confirm('Tüm raporları silmek istediğinizden emin misiniz?')) {
+                return;
+            }
+            
+            fetch('/api/reports/clear', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    loadReports();
+                } else {
+                    showAlert('Hata: ' + data.message, 'warning');
+                }
+            })
+            .catch(error => {
+                showAlert('Bir hata oluştu: ' + error.message, 'warning');
+            });
+        }
+        
+        // Auto-refresh session status, reports and videos every 5 seconds
+        setInterval(() => {
+            loadSessionStatus();
+            loadReports();
+            loadVideos();
+        }, 5000);
+        
+        
+        // Load session status, reports and videos on page load
+        loadSessionStatus();
+        loadReports();
+        loadVideos();
+    </script>
+</body>
+</html>

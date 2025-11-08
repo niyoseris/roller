@@ -3,6 +3,7 @@ LLM Analyzer using Gemini 2.0 Flash
 Provides intelligent analysis for trend categorization and relevance scoring
 """
 
+import os
 import logging
 import google.generativeai as genai
 from typing import Optional, Dict, List
@@ -10,7 +11,7 @@ from typing import Optional, Dict, List
 logger = logging.getLogger(__name__)
 
 # Gemini API Configuration
-GEMINI_API_KEY = "AIzaSyB_3b_pGtqDs5BDI5f57KTsxp2L8LHnGfQ"
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 GEMINI_MODEL = "gemini-2.0-flash-exp"
 
 CATEGORIES = [
